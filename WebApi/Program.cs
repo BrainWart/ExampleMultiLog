@@ -3,19 +3,10 @@ using OpenTelemetry.Logs;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Logging.AddOpenTelemetry(o =>
+builder.AddKeyedLogging<AuditLogging>(loggingBuilder =>
 {
-    o.AddOtlpExporter();
+    loggingBuilder.AddConsole();
 });
-
-builder.AddAuditLogging(loggingBuilder =>
-{
-    loggingBuilder.AddOpenTelemetry(o =>
-    {
-        o.AddOtlpExporter();
-    });
-});
-
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -36,7 +27,7 @@ var summaries = new[]
     "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
 };
 
-app.MapGet("/weatherforecast", ([FromKeyedServices(typeof(AuditKey))] ILogger<Program> auditLogger, [FromServices] ILogger<WeatherForecast> logger) =>
+app.MapGet("/weatherforecast", ([FromKeyedServices(typeof(AuditLogging))] ILogger<Program> auditLogger, [FromServices] ILogger<WeatherForecast> logger) =>
 {
     auditLogger.LogInformation("Test1");
     logger.LogInformation("Additional Logging");
@@ -53,12 +44,24 @@ app.MapGet("/weatherforecast", ([FromKeyedServices(typeof(AuditKey))] ILogger<Pr
 })
 .WithName("GetWeatherForecast");
 
-var auditLogger = app.Services.GetRequiredKeyedService<ILogger<Program>>(typeof(AuditKey));
-auditLogger.LogInformation("Started!");
 
-app.Run();
+async Task Test()
+{
+    var auditLogger = app.Services.GetRequiredKeyedService<ILogger<Program>>(typeof(AuditLogging));
+    using (auditLogger.BeginScope("Audit Testing"))
+        auditLogger.LogInformation("Audit Started!");
+
+
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    using (logger.BeginScope("Testing"))
+        logger.LogInformation("Normal Started!");
+}
+
+await Task.WhenAll(Test(), app.RunAsync());
 
 record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {
     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 }
+
+internal class AuditLogging {}
