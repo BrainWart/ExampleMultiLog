@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using OpenTelemetry.Logs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,19 +44,16 @@ app.MapGet("/weatherforecast", ([FromKeyedServices(typeof(AuditLogging))] ILogge
 .WithName("GetWeatherForecast");
 
 
-async Task Test()
-{
-    var auditLogger = app.Services.GetRequiredKeyedService<ILogger<Program>>(typeof(AuditLogging));
-    using (auditLogger.BeginScope("Audit Testing"))
-        auditLogger.LogInformation("Audit Started!");
+var auditLogger = app.Services.GetRequiredKeyedService<ILogger<Program>>(typeof(AuditLogging));
+using (auditLogger.BeginScope("Audit Testing"))
+	auditLogger.LogInformation("Audit Started!");
 
 
-    var logger = app.Services.GetRequiredService<ILogger<Program>>();
-    using (logger.BeginScope("Testing"))
-        logger.LogInformation("Normal Started!");
-}
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+using (logger.BeginScope("Testing"))
+	logger.LogInformation("Normal Started!");
 
-await Task.WhenAll(Test(), app.RunAsync());
+app.Run();
 
 record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {
