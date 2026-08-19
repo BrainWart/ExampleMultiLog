@@ -36,7 +36,7 @@ var summaries = new[]
     "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
 };
 
-app.MapGet("/weatherforecast", ([FromKeyedServices(AuditKeyedLogger.AuditKey)] ILogger<Program> auditLogger, [FromServices] ILogger<WeatherForecast> logger) =>
+app.MapGet("/weatherforecast", ([FromKeyedServices(typeof(AuditKey))] ILogger<Program> auditLogger, [FromServices] ILogger<WeatherForecast> logger) =>
 {
     auditLogger.LogInformation("Test1");
     logger.LogInformation("Additional Logging");
@@ -53,7 +53,7 @@ app.MapGet("/weatherforecast", ([FromKeyedServices(AuditKeyedLogger.AuditKey)] I
 })
 .WithName("GetWeatherForecast");
 
-var auditLogger = app.Services.GetRequiredKeyedService<ILogger<Program>>(AuditKeyedLogger.AuditKey);
+var auditLogger = app.Services.GetRequiredKeyedService<ILogger<Program>>(typeof(AuditKey));
 auditLogger.LogInformation("Started!");
 
 app.Run();

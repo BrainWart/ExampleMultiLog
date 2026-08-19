@@ -18,8 +18,8 @@ public static class AuditServiceCollectionExtensions
         });
         var auditServices = auditServiceCollection.BuildServiceProvider();
 
-        builder.Services.AddKeyedTransient(typeof(ILogger<>), AuditKeyedLogger.AuditKey, typeof(AuditKeyedLogger<>));
-        builder.Services.AddKeyedSingleton<ILoggerFactory, LoggerFactory>(AuditKeyedLogger.AuditKey, (services, _) =>
+        builder.Services.AddKeyedTransient(typeof(ILogger<>), typeof(AuditKey), typeof(AuditKeyedLogger<>));
+        builder.Services.AddKeyedSingleton<ILoggerFactory, LoggerFactory>(typeof(AuditKey), (services, _) =>
         {
             var providers = auditServices.GetServices<ILoggerProvider>();
             var options = auditServices.GetRequiredService<IOptions<LoggerFilterOptions>>();
@@ -31,15 +31,12 @@ public static class AuditServiceCollectionExtensions
     }
 }
 
-public static class AuditKeyedLogger
-{
-    public const string AuditKey = "AUDIT";
-}
+public static class AuditKey { }
 
 public class AuditKeyedLogger<T> : ILogger<T>
 {
     private ILogger<T> _logger;
-    public AuditKeyedLogger([FromKeyedServices(AuditKeyedLogger.AuditKey)] ILoggerFactory factory)
+    public AuditKeyedLogger([FromKeyedServices(typeof(AuditKey))] ILoggerFactory factory)
     {
         _logger = factory.CreateLogger<T>();
     }
